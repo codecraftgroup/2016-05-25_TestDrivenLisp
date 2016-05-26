@@ -13,22 +13,35 @@ import org.junit.Test;
 
 public class Tests {
 
+	private boolean isEssExpression(String text) {
+		return text.charAt(0) == '(' && text.charAt(text.length()-1) == ')';
+	}
+	
+	private Object evaluateEssExpression(String text, Map<String, Object> symtable) {
+		String innards = text.substring(1, text.length()-1);
+		String[] parts = innards.split(" ");
+		final String key = parts[0];
+		if(key.equals("quote"))
+			return new Symbol(parts[1]);
+		
+		if(key.equals("+")) {
+			return this.evalAddition(parts);
+		}
+		if(key.equals("*")) {
+			return this.evalMultiply(parts);
+		}
+		throw new RuntimeException();
+	}
+	
 	Object eval(String text, Map<String, Object> symtable) {
 		try{
 		    return Double.parseDouble(text);
 		}
 		catch(Exception ex) {
-			if (text.charAt(0) == '(' && text.charAt(text.length()-1) == ')') {
-				String innards = text.substring(1, text.length()-1);
-				String[] parts = innards.split(" ");
-				final String key = parts[0];
-				if(key.equals("quote"))
-					return new Symbol(parts[1]);
-				
-				if (!symtable.containsKey(key)) {
-					throw new RuntimeException();
-				}
+			if (isEssExpression(text)) {
+				return evaluateEssExpression(text, symtable);
 			}
+			
 			String unquotedText = text.replaceAll("\"","");
 			Object value = symtable.get(unquotedText);
 			if(value == null){
@@ -38,7 +51,23 @@ public class Tests {
 			}
 		}
 	}
+	
+	Object evalMultiply(String[] parts) {
+		int result = 1;
+		for (int i = 1; i < parts.length; i++) {
+			result *= Integer.valueOf(parts[i]);
+		}
+			return new Integer(result);
+	}
 
+	Object evalAddition(String[] parts) {
+		int result = 0;
+		for (int i = 1; i < parts.length; i++) {
+			result += Integer.valueOf(parts[i]);
+		}
+		return new Integer(result);	
+	}
+	
 	Object eval(String text){
 		return eval(text, Collections.emptyMap());
 	}
@@ -122,6 +151,21 @@ public class Tests {
 	public void callingANonFunctionThrows() {
 		eval("(1 2 3)");
 	}
+	
+	@Test
+	public void addFunction() {
+		assertEquals(eval("(+ 1 2 3)"), 6);
+	}
+	
+	@Test
+	public void multiplyFunction() {
+		assertEquals(eval("(* 1 1 3)"), 3);
+	}
+
+//	@Test
+//	public void nestedSExpressionFunction() {
+//		assertEquals(eval("(+ (* 1 3) 1)"), 4);
+//	}
 
 
 }
