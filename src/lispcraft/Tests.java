@@ -2,12 +2,16 @@ package lispcraft;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 
@@ -20,6 +24,13 @@ public class Tests {
 	private Object evaluateEssExpression(String text, Map<String, Object> symtable) {
 		String innards = text.substring(1, text.length()-1);
 		String[] parts = innards.split(" ");
+		return foo(parts);
+	}
+
+	private Object foo(String[] parts) {
+		final List<Object> elems = Arrays.asList(parts).stream().map(this::eval)
+				.collect(Collectors.toList());
+		
 		final String key = parts[0];
 		if(key.equals("quote"))
 			return new Symbol(parts[1]);
@@ -70,6 +81,27 @@ public class Tests {
 	
 	Object eval(String text){
 		return eval(text, Collections.emptyMap());
+	}
+	
+	List<Object> parse(String sExpression) {
+		String tmp = sExpression.replace("(", " ( ");
+		tmp = tmp.replace(")", " ) ");
+		tmp = tmp.trim();
+
+		List<Object> ret = new ArrayList<Object>();
+		String[] parts = tmp.split("\\s+");
+		for (String item: parts) {
+			if (item.equals(")")) {
+				return ret;
+			}
+			else if (item.equals("(")) {
+				;
+			}
+			else {
+				ret.add(item);
+			}
+		}
+		return ret;
 	}
 	
 	@Test
@@ -162,10 +194,15 @@ public class Tests {
 		assertEquals(eval("(* 1 1 3)"), 3);
 	}
 
-//	@Test
-//	public void nestedSExpressionFunction() {
-//		assertEquals(eval("(+ (* 1 3) 1)"), 4);
-//	}
+	//@Test
+	//public void nestedSExpressionFunction() {
+	//	assertEquals(eval("( + ( * 1 3 ) 1 )"), 4);
+	//}
+	
+	@Test
+	public void parseTest() {
+		assertEquals(parse("(1 2 3)").size(), 3);
+	}
 
 
 }
